@@ -1,0 +1,15 @@
+{
+  "name": "saas-gap-finder",
+  "version": "1.0.0",
+  "description": "search market gaps and propose a SaaS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase": "^11.7.3"
+  }
+}
