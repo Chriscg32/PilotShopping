@@ -1,15 +1,14 @@
 {
-  "name": "saas-gap-finder",
-  "version": "1.0.0",
-  "description": "search market gaps and propose a SaaS",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "build": "react-scripts build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "firebase": "^11.7.3"
+    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
+    "path-to-regexp": "^8.2.0"
+  },
+  "devDependencies": {
+    "react-scripts": "^3.0.1"
   }
 }
