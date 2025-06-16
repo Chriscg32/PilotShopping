@@ -1,35 +1,129 @@
-version: '3.8'
 
-services:
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: ai-copy-n8n
-    restart: unless-stopped
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=changeme123
-      - N8N_HOST=localhost
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - NODE_ENV=production
-      - WEBHOOK_URL=http://localhost:5678/
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - ./n8n/workflows:/home/node/.n8n/workflows:ro
-
-  redis:
-    image: redis:7-alpine
-    container_name: ai-copy-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
+networks:
+  butterflyblue_network:
+    driver: bridge
 
 volumes:
-  n8n_data:
+  postgres_data:
   redis_data:
+  mqtt_data:
+  mqtt_logs:
+  app_data:
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: butterflyblue-postgres
+    environment:
+      POSTGRES_DB: butterflyblue
+      POSTGRES_USER: butterflyblue_user
+      POSTGRES_PASSWORD: butterflyblue123
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - butterflyblue_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U butterflyblue_user -d butterflyblue"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: butterflyblue-redis
+    command: redis-server --appendonly yes --requirepass butterflyblue123
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - butterflyblue_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # MQTT Broker (using different port to avoid conflict)
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: butterflyblue-mqtt
+    volumes:
+      - mqtt_data:/mosquitto/data
+      - mqtt_logs:/mosquitto/log
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    ports:
+      - "1884:1883"  # Changed port to avoid conflict
+      - "9002:9001"  # Changed port to avoid conflict
+    networks:
+      - butterflyblue_network
+    restart: unless-stopped
+
+  # Main Application
+  app:
+    build: .
+    container_name: butterflyblue-app
+    environment:
+      - DATABASE_URL=postgresql://butterflyblue_user:butterflyblue123@postgres:5432/butterflyblue
+      - REDIS_URL=redis://:butterflyblue123@redis:6379/0
+      - MQTT_HOST=mqtt
+      - MQTT_PORT=1883
+      - ENVIRONMENT=production
+    volumes:
+      - app_data:/app/data
+      - ./logs:/app/logs
+    ports:
+      - "8001:8000"  # Changed to port 8001 to avoid conflict
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mqtt:
+        condition: service_started
+    networks:
+      - butterflyblue_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: butterflyblue-nginx
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+    networks:
+      - butterflyblue_network
+    restart: unless-stopped
+
+  # Grafana Monitoring
+  grafana:
+    image: grafana/grafana:latest
+    container_name: butterflyblue-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - ./config/grafana:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - butterflyblue_network
+    restart: unless-stopped

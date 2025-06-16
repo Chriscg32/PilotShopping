@@ -1,0 +1,33 @@
+# Development dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Code quality
+black==23.11.0
+flake8==6.1.0
+isort==5.12.0
+mypy==1.7.1
+pre-commit==3.6.0
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.4.8
+mkdocs-mermaid2-plugin==1.1.1
+
+# Debugging
+debugpy==1.8.0
+ipdb==0.13.13
+
+# Performance testing
+locust==2.17.0
+
+# Security testing
+bandit==1.7.5
+safety==2.3.5
+
+# API testing
+httpx==0.25.2
