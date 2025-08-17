@@ -3,167 +3,94 @@ import 'package:path/path.dart';
 import '../models/trip.dart';
 import '../models/trip_item.dart';
 
-/// Database service for managing local SQLite storage
 class DatabaseService {
-  static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
+  static final DatabaseService instance = DatabaseService._();
 
-  factory DatabaseService() {
-    return _instance;
-  }
-
-  DatabaseService._internal();
+  DatabaseService._();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
+    _database = await _initDB();
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    final path = await getDatabasesPath();
-    final databasePath = join(path, 'pilot_shopping.db');
-
+  Future<Database> _initDB() async {
+    String path = join(await getDatabasesPath(), 'shopping_database.db');
     return await openDatabase(
-      databasePath,
+      path,
       version: 1,
-      onCreate: _onCreate,
+      onCreate: _createDB,
     );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
+  Future<void> _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE trips (
-        id TEXT PRIMARY KEY,
-        store_name TEXT,
-        store_branch TEXT,
-        started_at TEXT NOT NULL,
-        ended_at TEXT,
-        budget_cents INTEGER NOT NULL,
-        alert_gap_cents INTEGER NOT NULL,
-        total_cents INTEGER NOT NULL DEFAULT 0,
-        currency TEXT NOT NULL DEFAULT 'ZAR',
-        status TEXT NOT NULL DEFAULT 'open',
-        device_id TEXT NOT NULL,
-        last_modified TEXT NOT NULL
+      CREATE TABLE trips(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        date TEXT,
+        budget REAL,
+        totalCost REAL
       )
     ''');
-
     await db.execute('''
-      CREATE TABLE trip_items (
-        id TEXT PRIMARY KEY,
-        trip_id TEXT NOT NULL,
-        name TEXT NOT NULL,
-        price_cents INTEGER NOT NULL,
-        quantity INTEGER NOT NULL DEFAULT 1,
-        source TEXT NOT NULL DEFAULT 'ocr',
-        unit TEXT NOT NULL DEFAULT 'each',
-        notes TEXT,
-        created_at TEXT NOT NULL,
-        last_modified TEXT NOT NULL
+      CREATE TABLE trip_items(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tripId INTEGER,
+        name TEXT,
+        price REAL,
+        quantity INTEGER,
+        FOREIGN KEY (tripId) REFERENCES trips(id) ON DELETE CASCADE
       )
     ''');
   }
 
-  Future<String> insertTrip(Trip trip) async {
-    final db = await database;
-    await db.insert('trips', trip.toMap());
-    return trip.id;
+  // Trip operations
+  Future<int> insertTrip(Trip trip) async {
+    Database db = await database;
+    return await db.insert('trips', trip.toMap());
   }
 
-  Future<List<Trip>> getAllTrips() async {
-    final db = await database;
-    final maps = await db.query('trips', orderBy: 'started_at DESC');
-    return List.generate(maps.length, (i) => Trip.fromMap(maps[i]));
-  }
-
-  Future<List<TripItem>> getTripItems(String tripId) async {
-    final db = await database;
-    final maps = await db.query('trip_items', where: 'trip_id = ?', whereArgs: [tripId]);
-    return List.generate(maps.length, (i) => TripItem.fromMap(maps[i]));
-  }
-
-  Future<String> insertTripItem(TripItem item) async {
-    final db = await database;
-    await db.insert('trip_items', item.toMap());
-    return item.id;
-  }
-
-  Future<int> getTripTotal(String tripId) async {
-    final db = await database;
-    final result = await db.rawQuery(
-      'SELECT SUM(price_cents * quantity) as total FROM trip_items WHERE trip_id = ?',
-      [tripId],
-    );
-    return result.first['total'] as int? ?? 0;
+  Future<List<Trip>> getTrips() async {
+    Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('trips');
+    return List.generate(maps.length, (i) {
+      return Trip.fromMap(maps[i]);
+    });
   }
 
   Future<int> updateTrip(Trip trip) async {
-    final db = await database;
-    return await db.update(
-      'trips',
-      trip.toMap(),
-      where: 'id = ?',
-      whereArgs: [trip.id],
-    );
+    Database db = await database;
+    return await db.update('trips', trip.toMap(), where: 'id = ?', whereArgs: [trip.id]);
+  }
+
+  Future<int> deleteTrip(int id) async {
+    Database db = await database;
+    return await db.delete('trips', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // TripItem operations
+  Future<int> insertTripItem(TripItem item) async {
+    Database db = await database;
+    return await db.insert('trip_items', item.toMap());
+  }
+
+  Future<List<TripItem>> getTripItems(int tripId) async {
+    Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('trip_items', where: 'tripId = ?', whereArgs: [tripId]);
+    return List.generate(maps.length, (i) {
+      return TripItem.fromMap(maps[i]);
+    });
   }
 
   Future<int> updateTripItem(TripItem item) async {
-    final db = await database;
-    return await db.update(
-      'trip_items',
-      item.toMap(),
-      where: 'id = ?',
-      whereArgs: [item.id],
-    );
+    Database db = await database;
+    return await db.update('trip_items', item.toMap(), where: 'id = ?', whereArgs: [item.id]);
   }
 
-  Future<int> deleteTrip(String tripId) async {
-    final db = await database;
-    return await db.delete(
-      'trips',
-      where: 'id = ?',
-      whereArgs: [tripId],
-    );
-  }
-
-  Future<int> deleteTripItem(String itemId) async {
-    final db = await database;
-    return await db.delete(
-      'trip_items',
-      where: 'id = ?',
-      whereArgs: [itemId],
-    );
-  }
-
-  Future<Trip?> getTrip(String tripId) async {
-    final db = await database;
-    final maps = await db.query(
-      'trips',
-      where: 'id = ?',
-      whereArgs: [tripId],
-      limit: 1,
-    );
-    if (maps.isNotEmpty) {
-      return Trip.fromMap(maps.first);
-    }
-    return null;
-  }
-
-  Future<List<Trip>> getActiveTrips() async {
-    final db = await database;
-    final maps = await db.query(
-      'trips',
-      where: 'status = ?',
-      whereArgs: ['open'],
-      orderBy: 'started_at DESC',
-    );
-    return List.generate(maps.length, (i) => Trip.fromMap(maps[i]));
-  }
-
-  Future<void> clearAllData() async {
-    final db = await database;
-    await db.delete('trip_items');
-    await db.delete('trips');
+  Future<int> deleteTripItem(int id) async {
+    Database db = await database;
+    return await db.delete('trip_items', where: 'id = ?', whereArgs: [id]);
   }
 }
