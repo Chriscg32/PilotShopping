@@ -1,6 +1,0 @@
-{
-  "currency": "ZAR",
-  "default_budget_cents": 200000,
-  "default_alert_gap_cents": 50000,
-  "pro_enabled": false
-}
