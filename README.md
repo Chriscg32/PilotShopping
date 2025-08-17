@@ -1,186 +1,67 @@
-# Landing Copy Generator v0.4.0
+# Pilot Shopping Quick Add MVP
 
-A comprehensive multi-agent system for business automation, featuring advanced data processing, security monitoring, DevOps automation, and AI/ML capabilities.
+This directory contains a minimal Flutter prototype for the **Pilot Shopping**
+application. The goal of this MVP is to demonstrate on‑device price scanning
+and budget tracking without any server dependencies. It implements the
+"Quick Add" flow described in the product architecture:
 
-## 🚀 Features
+* Capture an image of a shelf price tag using the device camera.
+* Run on‑device OCR (via Google ML Kit) to recognise the printed price.
+* Parse the recognised text to extract a currency amount.
+* Ask the user to confirm adding the price to the running total.
+* Maintain a simple budget and alert threshold.
 
-### Core Agents
-- **Data Agent**: Advanced analytics, ETL operations, and data quality assessment
-- **Security Agent**: Comprehensive security monitoring and compliance
-- **DevOps Agent**: Infrastructure management and deployment automation  
-- **AI/ML Agent**: Machine learning model development and deployment
-- **Finance Agent**: Payment processing and financial analytics
-- **Design Agent**: UI/UX design and branding asset creation
-- **Engineering Agent**: Full-stack development automation
-- **Customer Service Agent**: Advanced customer support automation
-- **Marketing Agent**: Digital marketing campaign management
+## Getting Started
 
-### Infrastructure
-- **API Gateway**: RESTful API with FastAPI
-- **Real-time Monitoring**: Agent health and performance tracking
-- **Message Broker**: MQTT-based inter-agent communication
-- **Database**: PostgreSQL with Redis caching
-- **Containerization**: Docker and Docker Compose support
-- **CI/CD**: Automated testing and deployment pipelines
+> **Prerequisites**: Flutter 3.x, Android Studio or Xcode with emulators or
+> physical devices, and the **google_mlkit_text_recognition** plugin. This
+> project is set up for an offline‑first experience and does not require
+> network connectivity.
 
-## 📋 Quick Start
+1. Ensure you have a Flutter environment set up on your machine. See
+   [flutter.dev/docs/get-started/install](https://flutter.dev/docs/get-started/install).
+2. Navigate to this directory:
 
-### Prerequisites
-- Python 3.11+
-- Docker and Docker Compose
-- Git
+   ```sh
+   cd PilotShopping_QuickAdd
+   ```
 
-### Installation
+3. Fetch the dependencies:
 
-```bash
-# Clone the repository
-git clone https://github.com/Chriscg32/landing-copy-generator.git
-cd landing-copy-generator
+   ```sh
+   flutter pub get
+   ```
 
-# Deploy with Docker Compose
-./scripts/deploy.sh production
+4. Run the application on an emulator or device:
 
-# Or for development
-./scripts/deploy.sh development
-```
+   ```sh
+   flutter run
+   ```
 
-### API Usage
+5. The app opens to a home page showing your running total. Use the
+   **settings** icon to adjust your budget and alert gap. Tap **Scan Price**
+   to open the camera. After aligning the price tag and pressing the
+   camera button, confirm the detected price to add it to your total.
 
-```python
-import requests
+## File Structure
 
-# Create a data analysis task
-response = requests.post("http://localhost:8000/tasks", json={
-    "agent_type": "data",
-    "task_type": "analyze",
-    "data": {
-        "dataset_url": "https://example.com/data.csv"
-    }
-})
+* `pubspec.yaml` – project manifest declaring dependencies.
+* `lib/main.dart` – entry point and user interface. Contains the home page
+  and scanning flow.
+* `lib/ocr_service.dart` – helper class for parsing prices from recognised
+  text.
+* `README.md` – this documentation.
 
-print(response.json())
-```
+## Extending This Prototype
 
-## 🏗️ Architecture
+This MVP focuses solely on scanning and summing prices. For a full
+production release, consider implementing the following features:
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   API Gateway   │    │   Monitoring    │    │   Database      │
-│   (FastAPI)     │    │   (Grafana)     │    │   (PostgreSQL)  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         │                       │                       │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Data Agent    │    │ Security Agent  │    │  DevOps Agent   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   MQTT Broker   │
-                    │  (Mosquitto)    │
-                    └─────────────────┘
-```
+* **Persistent storage** of trips and scanned items using `sqflite`.
+* **Shopping list mode** with fuzzy matching of item names.
+* **Cloud sync** and optional server‑side receipt processing.
+* **Weight handling** for per‑kilogram pricing.
+* **Accessibility enhancements** such as voice prompts and larger fonts.
 
-## 📊 Monitoring
-
-Access the monitoring dashboard at `http://localhost:3000` (admin/admin)
-
-- Real-time agent status
-- Performance metrics
-- Alert management
-- System resource usage
-
-## 🔧 Configuration
-
-Environment-specific configurations are located in `config/environments/`:
-
-- `development.yml` - Development settings
-- `production.yml` - Production settings
-- `staging.yml` - Staging settings
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=agents --cov=api
-
-# Run specific agent tests
-pytest tests/test_data_agent.py -v
-```
-
-## 🚀 Deployment
-
-### Development
-```bash
-./scripts/deploy.sh development
-```
-
-### Production
-```bash
-./scripts/deploy.sh production
-```
-
-### Kubernetes (Coming Soon)
-```bash
-kubectl apply -f k8s/
-```
-
-## 📚 API Documentation
-
-Interactive API documentation is available at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-## 🔒 Security
-
-- JWT-based authentication
-- End-to-end encryption
-- Input validation and sanitization
-- Rate limiting and DDoS protection
-- Regular security audits
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-- **Documentation**: [docs.landingcopygenerator.com](https://docs.landingcopygenerator.com)
-- **Issues**: [GitHub Issues](https://github.com/Chriscg32/landing-copy-generator/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Chriscg32/landing-copy-generator/discussions)
-- **Email**: support@landingcopygenerator.com
-
-## 🗺️ Roadmap
-
-### v0.5.0 (Q2 2024)
-- Mobile Agent for app development
-- IoT Agent for device management
-- Blockchain Agent for Web3 integration
-- Content Agent for advanced content creation
-
-### v0.6.0 (Q3 2024)
-- Voice Agent for speech processing
-- Video Agent for multimedia content
-- Analytics Agent for business intelligence
-- Compliance Agent for regulatory automation
-
----
-
-**Built with ❤️ by the Landing Copy Generator Team**
+Contributions and feedback are welcome. Open issues or pull requests on
+GitHub to discuss improvements.

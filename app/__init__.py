@@ -1,1 +1,0 @@
-# from app.config import settings  # remove or comment out if no config.py# This file can be empty but must exist to mark the folder as a package

@@ -1,0 +1,29 @@
+name: pilot_shopping
+description: Quick Add MVP for scanning price tags and budgeting.
+publish_to: 'none'
+
+# Version of the app. Bump this on releases.
+version: 0.0.1
+
+environment:
+  sdk: ">=2.19.5 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Camera plugin provides access to device cameras.
+  camera: ^0.10.5
+  # ML Kit plugin for on-device text recognition (OCR).
+  google_mlkit_text_recognition: ^0.15.0
+  # SQLite plugin for simple local persistence. Not used in this MVP but
+  # included for future extension (e.g. storing trip history).
+  sqflite: ^2.3.0
+  # Provides paths to commonly used locations on the filesystem.
+  path_provider: ^2.0.11
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
